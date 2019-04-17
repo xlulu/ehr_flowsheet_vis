@@ -27,6 +27,7 @@ var margin = 5;
 var data_all;
 var data_table = {};
 var doctor_visit;
+var visit_data;
 var min = {};
 var max = {};
 // for(i=0; i<5; i++){
@@ -50,7 +51,7 @@ function renderVis(data){
     console.log(data_all);
     doctor_visit = data_all.filter(function(d){return d.DoctorVisit == 1;})
         .map(function(d){return d.date_time;});
-    console.log(doctor_visit);
+    // console.log(doctor_visit);
     tableCreate(data_all);
 }
 
@@ -104,12 +105,16 @@ function tableCreate(data){
     // add data to each cell: seperate dataset by date_time, then by each line
     for(var i = 1; i < 5; i++){
         data_period = data.filter(function(d) { return (d.date_time <= doctor_visit[i] && d.date_time >= doctor_visit[i-1]);});
-        console.log(data_period);
+        // console.log(data_period);
         var x_scale = d3.scaleTime()
             .range([0, width])
-            //.domain([new Date(2017, 1, 20, 17), new Date(2019, 11, 28, 19, 9)])
             .domain([doctor_visit[i-1], doctor_visit[i]]);
-        // for (var j = 1; j < )
+        // for (var j = 1; j < ){}
+        date_time_data = data_period.map(function(d){return d.date_time;});
+        // cells for weight
+        weight_data = data_period.map(function(d){return d.Weight;});
+        console.log(date_time_data);
+        console.log(weight_data);
 
     }
 
@@ -119,10 +124,6 @@ function tableCreate(data){
         //data[i] = data
         cell = new CellVis(data, "r1c2");
     //}
-
-    // for(var i =0; i < 8; i++){
-    //     console.log(typeof data[i]["Date"]);
-    // };
 }
 
 
@@ -139,13 +140,6 @@ class CellVis{
         this.y_scale = d3.scaleLinear()
             .domain([125, 135])
             .range([margin, height-margin]);
-        // var x = d3.scaleTime()
-        //     .range([0, width])
-        //     //.domain([new Date(2017, 1, 20, 17), new Date(2019, 11, 28, 19, 9)])
-        //     .domain([doctor_visit[0], doctor_visit[4]]);
-        // var y = d3.scaleLinear()
-        //     .domain([125, 135])
-        //     .range([0, height]);
         this.vis_data = cell_data;
         this.id = document.getElementById(cell_id);
         this.svg = d3.select(this.id)
