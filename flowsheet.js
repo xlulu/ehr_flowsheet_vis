@@ -18,14 +18,17 @@ $(document).ready(() => {
 
 const categories = ["Weight", "Blood Pressure", "Pulse", "Pulse Oxygen", "AIC", "Glucose", "Medicine"];
 const categories_vis = ["Weight", "BloodPressure(diastolic)", "BloodPressure(systolic)",  "Pulse", "PulseOx", "INR", "Glucose"];
+const categories_vis1 = ["DateTime", "Weight", "BloodPressure(diastolic)", "BloodPressure(systolic)",  "Pulse", "PulseOx", "INR", "Glucose"];
 // doctor_visit_1 = [new Date(2017, 11, 20, 17), new Date(2017, 11, 28, 19, 9), new Date(2017, 12, 29, 20, 9), new Date(2018, 3, 4, 15, 4), new Date(2018, 5, 17, 14, 4)]
 var width = 130;
 var height = 90;
 var margin = 5;
 var data_all;
-var data_table = {};
-var doctor_visit;
+var data_table = {}; // each key has a array of all values of that category
+var doctor_visit; // date type for doctor visit, used to seperate dataset
+var visit_date; // usd to display in the table
 var visit_data;
+var bp;
 var min = {};
 var max = {};
 
@@ -43,15 +46,16 @@ function init_data(data){
     // var parseDate = d3.timeParse("%-d-%b-%y"); //Date: "14-May-18"
     var parseDate = d3.timeParse("%-m/%-d/%y %H:%M"); //DateTime: "5/14/18 14:04"
 
-    // console.log(data);
     data.forEach(function(d){
         d.date_time = parseDate(d.DateTime);
     });
     // data_all = data;
     console.log("data loaded!");
+    visit_data = data.filter(function(d){return d.DoctorVisit == 1;});
+    doctor_visit = visit_data.map(function(d){return d.date_time;});
+    visit_date = visit_data.map(function(d){return d.DateTime;});
+    console.log(visit_data);
 
-    doctor_visit = data.filter(function(d){return d.DoctorVisit == 1;})
-        .map(function(d){return d.date_time;});
    // dataset of each category for scatter plots
     for (var i = 0; i < 7; i++){
         data_table[categories_vis[i]] = data.map(function(d){return d[categories_vis[i]];});
@@ -84,6 +88,7 @@ function init_data(data){
 function tableCreate(data){
     var handler = document.getElementById("flowsheet");
     tbl  = document.createElement('table');
+    tbl.classList.add("table");
     tbl.id = "flowsheet_table";
 
     for(var i = 0; i < 8; i++){
@@ -99,6 +104,30 @@ function tableCreate(data){
     // add categories of table
     for(var i = 1; i < 8; i++){
         document.getElementById("r" + i + "c0").innerText = categories[i-1];
+    }
+    // add date in the first line
+    // document.getElementById("r0c1").innerText = visit_date[1];
+    // for(var i = 0; i < 5; i++){
+    //     document.getElementById("r0c" + (i*2+1)).innerText = visit_date[i];
+    //     for (var j = 1; j < 7; j++){
+    //
+    //     }
+    // }
+    for (var i = 0; i < 5; i++) {
+        // console.log(visit_data[i]);
+        for (var j = 0 ; j < 2; j++){
+            // console.log(visit_data[i][categories_vis1[j]]);
+            document.getElementById("r" + j + "c" + (i*2+1)).innerText = visit_data[i][categories_vis1[j]];
+        }
+        // visit_data[categories_vis[i]] = visit.map(function (d) {
+        //     return d[categories_vis[i]];
+    }
+    for (var i = 0; i < 5; i++) {
+        for (var j = 3 ; j < 6; j++){
+            document.getElementById("r" + j + "c" + (i*2+1)).innerText = visit_data[i][categories_vis1[j+1]];
+        }
+        // visit_data[categories_vis[i]] = visit.map(function (d) {
+        //     return d[categories_vis[i]];
     }
 
     // add data to each cell: seperate dataset by date_time, then by each line
@@ -117,8 +146,6 @@ function tableCreate(data){
         //     cell = new CellVis(data_period, "r" + j + "c"+2*i, categories_vis[j], x_scale, min[categories_vis[j]], max[categories_vis[j]]);
         // }
         cell_wt = new CellVis(data_period, "r1c"+2*i, "Weight", x_scale, min.Weight, max.Weight);
-        // cell_bp_l = new CellVis(data_period, "r2c"+2*i, "BloodPressure(diastolic)", x_scale, min["BloodPressure(diastolic)"], max["BloodPressure(systolic)"]);
-        // cell_bp_h = new CellVis(data_period, "r2c"+2*i, "BloodPressure(systolic)", "BloodPressure(systolic)", "BloodPressure(systolic)",x_scale, min["BloodPressure(diastolic)"], max["BloodPressure(systolic)"]);
         cell_bp = new CellVis2(data_period, "r2c"+2*i, "BloodPressure(diastolic)", "BloodPressure(systolic)", x_scale, min["BloodPressure(diastolic)"], max["BloodPressure(systolic)"]);
         cell_pls = new CellVis(data_period, "r3c"+2*i, "Pulse", x_scale, min.Pulse, max.Pulse);
         cell_pls_ox = new CellVis(data_period, "r4c"+2*i, "PulseOx", x_scale, min.PulseOx, max.PulseOx);
@@ -266,9 +293,6 @@ class CellVis2{
 //     body.appendChild(tbl);
 // }
 
-//
-
-//
 // $(document).ready(() => {
 //     d3.queue()
 //         .defer(d3.csv, "fakedata.csv")
