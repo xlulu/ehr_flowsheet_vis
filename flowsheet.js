@@ -17,10 +17,8 @@ $(document).ready(() => {
 });
 
 const categories = ["Weight", "Blood Pressure", "Pulse", "Pulse Oxygen", "AIC", "Glucose", "Medicine"];
-const categories_vis = ["weight", "blood_pressure", "pulse", "pulse_oxygen", "aic", "glucose", "medicine"];
+const categories_vis = ["Weight", "BloodPressure(diastolic)", "BloodPressure(systolic)",  "Pulse", "PulseOx", "INR", "Glucose"];
 // doctor_visit_1 = [new Date(2017, 11, 20, 17), new Date(2017, 11, 28, 19, 9), new Date(2017, 12, 29, 20, 9), new Date(2018, 3, 4, 15, 4), new Date(2018, 5, 17, 14, 4)]
-// visit_data = data.filter(function(d) {return d.doctor_visit = }); //change the data to use!!!!!
-
 var width = 130;
 var height = 90;
 var margin = 5;
@@ -30,46 +28,47 @@ var doctor_visit;
 var visit_data;
 var min = {};
 var max = {};
-// for(i=0; i<5; i++){
-//     var x[i] = d3.scaleTime()
-//         .range([0, width])
-//         // .domain([2017-11-20, 2018-7-25])
-//         .domain([doctor_visit[1], doctor_visit[2]]);
-// }
-// var x = d3.scaleTime()
-//     .range([0, width])
-//     // .domain([2017-11-20, 2018-7-25])
-//      //.domain([new Date(2017, 1, 20, 17), new Date(2019, 11, 28, 19, 9)])
-//     .domain([doctor_visit[0], doctor_visit[4]]);
-// var y = d3.scaleLinear()
-//     .domain([125, 135])
-//     .range([0, height]);
 
-
+// data load transfer and table chart render
 function renderVis(data){
     data_all = init_data(data);
     console.log(data_all);
-    doctor_visit = data_all.filter(function(d){return d.DoctorVisit == 1;})
-        .map(function(d){return d.date_time;});
     // console.log(doctor_visit);
     tableCreate(data_all);
 }
 
 
-// load data, tansfer data, and generate visualization
+// load data from csv to data, seperate by category to data_table{}, find min, max to each category
 function init_data(data){
-    // visit_data = data.filter(function(d) {return d.doctor_visit = }); //change the data to use!!!!!
     // var parseDate = d3.timeParse("%-d-%b-%y"); //Date: "14-May-18"
     var parseDate = d3.timeParse("%-m/%-d/%y %H:%M"); //DateTime: "5/14/18 14:04"
 
     // console.log(data);
     data.forEach(function(d){
         d.date_time = parseDate(d.DateTime);
-        // console.log(d);
-        // console.log(d['Weight']);
     });
     // data_all = data;
     console.log("data loaded!");
+
+    doctor_visit = data.filter(function(d){return d.DoctorVisit == 1;})
+        .map(function(d){return d.date_time;});
+   // dataset of each category for scatter plots
+    for (var i = 0; i < 7; i++){
+        data_table[categories_vis[i]] = data.map(function(d){return d[categories_vis[i]];});
+        max[categories_vis[i]] = ss.max(data_table[categories_vis[i]]);
+        min[categories_vis[i]] = ss.min(data_table[categories_vis[i]]);
+    }
+    // data_table[categories_vis[0]] = data.map(function(d){return d[categories_vis[0]];});
+    // max[categories_vis[0]] = ss.max(data_table[categories_vis[0]]);
+    // min[categories_vis[0]] = ss.min(data_table[categories_vis[0]]);
+    weight_data = data.map(function(d){return d.Weight;});
+    console.log(data_table);
+    // console.log(data_table[categories_vis[0]]);
+    // console.log(weight_data);
+    // max["Weight"] = ss.max(weight_data);
+    // min["Weight"] = ss.min(weight_data);
+    console.log(max);
+    console.log(min);
     // tableCreate(data);
     // var date_time = data.map(function(d){return d.date_time;});
     // var weight = data.map(function(d){return d.Weight;});
@@ -85,7 +84,7 @@ function init_data(data){
 function tableCreate(data){
     var handler = document.getElementById("flowsheet");
     tbl  = document.createElement('table');
-    // tbl.id = "flowsheet_table";
+    tbl.id = "flowsheet_table";
 
     for(var i = 0; i < 8; i++){
         var tr = tbl.insertRow();
@@ -107,38 +106,42 @@ function tableCreate(data){
         data_period = data.filter(function(d) { return (d.date_time <= doctor_visit[i] && d.date_time >= doctor_visit[i-1]);});
         // console.log(data_period);
         var x_scale = d3.scaleTime()
-            .range([0, width])
+            .range([margin, width-margin])
             .domain([doctor_visit[i-1], doctor_visit[i]]);
-        // for (var j = 1; j < ){}
-        date_time_data = data_period.map(function(d){return d.date_time;});
-        // cells for weight
-        weight_data = data_period.map(function(d){return d.Weight;});
-        console.log(date_time_data);
-        console.log(weight_data);
+        // date_time_data = data_period.map(function(d){return d.date_time;});
+        // var y_scale = d3.scaleLinear()
+        //     .domain([125, 135])
+        //     .range([margin, height-margin]);
 
+        // for (var j = 1; j < 8; j++){
+        //     cell = new CellVis(data_period, "r" + j + "c"+2*i, categories_vis[j], x_scale, min[categories_vis[j]], max[categories_vis[j]]);
+        // }
+        cell_wt = new CellVis(data_period, "r1c"+2*i, "Weight", x_scale, min.Weight, max.Weight);
+        // cell_bp_l = new CellVis(data_period, "r2c"+2*i, "BloodPressure(diastolic)", x_scale, min["BloodPressure(diastolic)"], max["BloodPressure(systolic)"]);
+        // cell_bp_h = new CellVis(data_period, "r2c"+2*i, "BloodPressure(systolic)", "BloodPressure(systolic)", "BloodPressure(systolic)",x_scale, min["BloodPressure(diastolic)"], max["BloodPressure(systolic)"]);
+        cell_bp = new CellVis2(data_period, "r2c"+2*i, "BloodPressure(diastolic)", "BloodPressure(systolic)", x_scale, min["BloodPressure(diastolic)"], max["BloodPressure(systolic)"]);
+        cell_pls = new CellVis(data_period, "r3c"+2*i, "Pulse", x_scale, min.Pulse, max.Pulse);
+        cell_pls_ox = new CellVis(data_period, "r4c"+2*i, "PulseOx", x_scale, min.PulseOx, max.PulseOx);
+        cell_aic = new CellVis(data_period, "r5c"+2*i, "INR", x_scale, min.INR, max.INR);
+        cell_gc = new CellVis(data_period, "r6c"+2*i, "Glucose", x_scale, min.Glucose, max.Glucose);
+        // cell_md = new
     }
-
-    // add data of csv file into table !!! need to change the data to data of each cell
-    // try 1:
-    //for(i=0; i<5; i++){
-        //data[i] = data
-        cell = new CellVis(data, "r1c2");
-    //}
 }
 
 
 // for each of the flow sheet chart in the table cell
 class CellVis{
     // chart in each cell
-    constructor(cell_data, cell_id){
+    constructor(cell_data, cell_id, category, x_scale, y_min, y_max){
         this.zoomin = false;
         var thisvis = this;
-        this.x_scale = d3.scaleTime()
-            .range([margin, width-margin])
-            //.domain([new Date(2017, 1, 20, 17), new Date(2019, 11, 28, 19, 9)])
-            .domain([doctor_visit[0], doctor_visit[4]]);
+        this.x_scale = x_scale;
+        // this.x_scale = d3.scaleTime()
+        //     .range([margin, width-margin])
+        //     //.domain([new Date(2017, 1, 20, 17), new Date(2019, 11, 28, 19, 9)])
+        //     .domain([doctor_visit[0], doctor_visit[4]]);
         this.y_scale = d3.scaleLinear()
-            .domain([125, 135])
+            .domain([y_min, y_max])
             .range([margin, height-margin]);
         this.vis_data = cell_data;
         this.id = document.getElementById(cell_id);
@@ -150,21 +153,89 @@ class CellVis{
             .selectAll(".dot").data(this.vis_data).enter().append("circle")
             .attr('class', 'dot')
             .attr('cx', function(d) {
-                // return x(d.date_time);
                 return thisvis.x_scale(d.date_time);
             })
             .attr('cy', function(d) {
-                return thisvis.y_scale(d.Weight);
+                return thisvis.y_scale(d[category]);
             })
-            .attr('r', 4);
+            .attr('r', 3);
     };
-
-    // randerVis(){};
-
-
+    // function zoomIn(){};
 }
 
-// class ZoomInvis{
+// for each of the flow sheet chart in the table cell, for 2 plots in one cell
+// data1 are lower, data2 are higher
+class CellVis2{
+    // chart in each cell
+    constructor(cell_data, cell_id, category1, category2, x_scale, y_min, y_max){
+        this.zoomin = false;
+        var thisvis = this;
+        this.x_scale = x_scale;
+        // this.x_scale = d3.scaleTime()
+        //     .range([margin, width-margin])
+        //     //.domain([new Date(2017, 1, 20, 17), new Date(2019, 11, 28, 19, 9)])
+        //     .domain([doctor_visit[0], doctor_visit[4]]);
+        this.y_scale = d3.scaleLinear()
+            .domain([y_min, y_max])
+            .range([margin, height-margin]);
+        this.vis_data = cell_data;
+        this.id = document.getElementById(cell_id);
+        this.svg = d3.select(this.id)
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        // add circles for category 1
+       this.svg
+            .selectAll(".dot1").data(this.vis_data).enter().append("circle")
+            .attr('class', 'dot')
+            .attr('cx', function(d) {
+                return thisvis.x_scale(d.date_time);
+            })
+            .attr('cy', function(d) {
+                return thisvis.y_scale(d[category1]);
+            })
+            .attr('r', 3);
+        // add circles for category 2
+        this.svg
+            .selectAll(".dot2").data(this.vis_data).enter().append("circle")
+            .attr('class', 'dot')
+            .attr('cx', function(d) {
+                return thisvis.x_scale(d.date_time);
+            })
+            .attr('cy', function(d) {
+                return thisvis.y_scale(d[category2]);
+            })
+            .attr('r', 3);
+    };
+    // function zoomIn(){};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// class ZoomInvis{};
 // }
 
 // var height = 500;
