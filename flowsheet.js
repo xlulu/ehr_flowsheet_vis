@@ -14,6 +14,18 @@ $(document).ready(() => {
     d3.csv("https://raw.githubusercontent.com/xlulu/ehr_flowsheet_vis/master/data/fakedata.csv")
         // .then(init_data);
         .then(renderVis);
+
+    var handler1 = document.getElementById("tryout");
+    console.log(handler1);
+
+var tbl1  = document.createElement('table');
+var thead = tbl1.createTHead();
+var row = thead.insertRow();
+for(var j = 0; j < 10; j++){
+    var td = row.insertCell();
+    // id of each cell r?c?, from r0c0 to r7c10, 8*11
+    td.id = "1r0" +"c" + j;
+}
 });
 
 const categories = ["Weight", "Blood Pressure", "Pulse", "Pulse Oxygen", "AIC", "Glucose", "Medicine"];
@@ -28,7 +40,6 @@ var data_table = {}; // each key has a array of all values of that category
 var doctor_visit; // date type for doctor visit, used to seperate dataset
 var visit_date; // usd to display in the table
 var visit_data;
-var bp;
 var min = {};
 var max = {};
 
@@ -53,6 +64,7 @@ function init_data(data){
     console.log("data loaded!");
     visit_data = data.filter(function(d){return d.DoctorVisit == 1;});
     doctor_visit = visit_data.map(function(d){return d.date_time;});
+    // bp =
     visit_date = visit_data.map(function(d){return d.DateTime;});
     console.log(visit_data);
 
@@ -69,8 +81,6 @@ function init_data(data){
     console.log(data_table);
     // console.log(data_table[categories_vis[0]]);
     // console.log(weight_data);
-    // max["Weight"] = ss.max(weight_data);
-    // min["Weight"] = ss.min(weight_data);
     console.log(max);
     console.log(min);
     // tableCreate(data);
@@ -84,50 +94,70 @@ function init_data(data){
     return data;
 }
 
-
+// generate the table and all the cells
 function tableCreate(data){
     var handler = document.getElementById("flowsheet");
-    tbl  = document.createElement('table');
+    var tbl  = document.createElement('table');
     tbl.classList.add("table");
+    tbl.classList.add("table-bordered");
+    tbl.classList.add("table-hover");
     tbl.id = "flowsheet_table";
 
-    for(var i = 0; i < 8; i++){
-        var tr = tbl.insertRow();
+    // var thead = tbl.createTHead();
+    var thead = document.createElement('thead');
+    thead.classList.add("bg-dark");
+    thead.classList.add("text-white");
+    // $("thead").addClass("thead-dark");
+    var row = thead.insertRow();
+    for(var j = 0; j < 10; j++){
+        var td = row.insertCell();
+        // id of each cell r?c?, from r0c0 to r7c10, 8*11
+        td.id = "r0" +"c" + j;
+    }
+    var tbody = document.createElement('tbody');
+    for(var i = 1; i < 8; i++){
+        var tr = tbody.insertRow();
         for(var j = 0; j < 10; j++){
             var td = tr.insertCell();
             // id of each cell r?c?, from r0c0 to r7c10, 8*11
             td.id = "r" + i +"c" + j;
         }
     }
-    handler.appendChild(tbl);
 
-    // add categories of table
+    // for(var i = 0; i < 8; i++){
+    //     var tr = tbl.insertRow();
+    //     for(var j = 0; j < 10; j++){
+    //         var td = tr.insertCell();
+    //         // id of each cell r?c?, from r0c0 to r7c10, 8*11
+    //         td.id = "r" + i +"c" + j;
+    //     }
+    // }
+
+    handler.appendChild(tbl);
+    tbl.appendChild(thead);
+    tbl.appendChild(tbody);
+
+    // add categories in each row
     for(var i = 1; i < 8; i++){
         document.getElementById("r" + i + "c0").innerText = categories[i-1];
     }
-    // add date in the first line
-    // document.getElementById("r0c1").innerText = visit_date[1];
-    // for(var i = 0; i < 5; i++){
-    //     document.getElementById("r0c" + (i*2+1)).innerText = visit_date[i];
-    //     for (var j = 1; j < 7; j++){
-    //
-    //     }
-    // }
+
+    // add values in each line except bp
     for (var i = 0; i < 5; i++) {
         // console.log(visit_data[i]);
         for (var j = 0 ; j < 2; j++){
             // console.log(visit_data[i][categories_vis1[j]]);
             document.getElementById("r" + j + "c" + (i*2+1)).innerText = visit_data[i][categories_vis1[j]];
         }
-        // visit_data[categories_vis[i]] = visit.map(function (d) {
-        //     return d[categories_vis[i]];
     }
     for (var i = 0; i < 5; i++) {
         for (var j = 3 ; j < 6; j++){
             document.getElementById("r" + j + "c" + (i*2+1)).innerText = visit_data[i][categories_vis1[j+1]];
         }
-        // visit_data[categories_vis[i]] = visit.map(function (d) {
-        //     return d[categories_vis[i]];
+    }
+    // ad bp values
+    for (var i = 0; i < 5; i++) {
+        document.getElementById("r2c" + (i*2+1)).innerText = visit_data[i][categories_vis1[2]] + " / " + visit_data[i][categories_vis1[3]];
     }
 
     // add data to each cell: seperate dataset by date_time, then by each line
@@ -137,18 +167,13 @@ function tableCreate(data){
         var x_scale = d3.scaleTime()
             .range([margin, width-margin])
             .domain([doctor_visit[i-1], doctor_visit[i]]);
-        // date_time_data = data_period.map(function(d){return d.date_time;});
-        // var y_scale = d3.scaleLinear()
-        //     .domain([125, 135])
-        //     .range([margin, height-margin]);
-
         // for (var j = 1; j < 8; j++){
         //     cell = new CellVis(data_period, "r" + j + "c"+2*i, categories_vis[j], x_scale, min[categories_vis[j]], max[categories_vis[j]]);
         // }
         cell_wt = new CellVis(data_period, "r1c"+2*i, "Weight", x_scale, min.Weight, max.Weight);
         cell_bp = new CellVis2(data_period, "r2c"+2*i, "BloodPressure(diastolic)", "BloodPressure(systolic)", x_scale, min["BloodPressure(diastolic)"], max["BloodPressure(systolic)"]);
         cell_pls = new CellVis(data_period, "r3c"+2*i, "Pulse", x_scale, min.Pulse, max.Pulse);
-        cell_pls_ox = new CellVis(data_period, "r4c"+2*i, "PulseOx", x_scale, min.PulseOx, max.PulseOx);
+        cell_pls_ox = new CellVis(data_period, "r4c"+2*i, "PulseOx", x_scale, min.PulseOx, max.PulseOx, 75, 79);
         cell_aic = new CellVis(data_period, "r5c"+2*i, "INR", x_scale, min.INR, max.INR);
         cell_gc = new CellVis(data_period, "r6c"+2*i, "Glucose", x_scale, min.Glucose, max.Glucose);
         // cell_md = new
@@ -159,14 +184,10 @@ function tableCreate(data){
 // for each of the flow sheet chart in the table cell
 class CellVis{
     // chart in each cell
-    constructor(cell_data, cell_id, category, x_scale, y_min, y_max){
+    constructor(cell_data, cell_id, category, x_scale, y_min, y_max, low = -1, high = 1000){
         this.zoomin = false;
         var thisvis = this;
         this.x_scale = x_scale;
-        // this.x_scale = d3.scaleTime()
-        //     .range([margin, width-margin])
-        //     //.domain([new Date(2017, 1, 20, 17), new Date(2019, 11, 28, 19, 9)])
-        //     .domain([doctor_visit[0], doctor_visit[4]]);
         this.y_scale = d3.scaleLinear()
             .domain([y_min, y_max])
             .range([margin, height-margin]);
@@ -185,7 +206,15 @@ class CellVis{
             .attr('cy', function(d) {
                 return thisvis.y_scale(d[category]);
             })
+            .style('fill', function(d) {
+                if (d[category] < low || d[category] > high) {return 'red';}
+                else {return 'black';}
+            })
             .attr('r', 3);
+        this.low = this.svg.append("line")
+            .attr("class", "line");
+            // .attr()
+
     };
     // function zoomIn(){};
 }
@@ -198,10 +227,6 @@ class CellVis2{
         this.zoomin = false;
         var thisvis = this;
         this.x_scale = x_scale;
-        // this.x_scale = d3.scaleTime()
-        //     .range([margin, width-margin])
-        //     //.domain([new Date(2017, 1, 20, 17), new Date(2019, 11, 28, 19, 9)])
-        //     .domain([doctor_visit[0], doctor_visit[4]]);
         this.y_scale = d3.scaleLinear()
             .domain([y_min, y_max])
             .range([margin, height-margin]);
@@ -212,7 +237,7 @@ class CellVis2{
             .attr("width", width)
             .attr("height", height);
         // add circles for category 1
-       this.svg
+        this.circles1 = this.svg
             .selectAll(".dot1").data(this.vis_data).enter().append("circle")
             .attr('class', 'dot')
             .attr('cx', function(d) {
@@ -223,7 +248,7 @@ class CellVis2{
             })
             .attr('r', 3);
         // add circles for category 2
-        this.svg
+        this.circles2 = this.svg
             .selectAll(".dot2").data(this.vis_data).enter().append("circle")
             .attr('class', 'dot')
             .attr('cx', function(d) {
@@ -237,21 +262,44 @@ class CellVis2{
     // function zoomIn(){};
 }
 
+// // Find a <table> element with id="myTable":
+// var table = document.getElementById("myTable");
+//
+// // Create an empty <thead> element and add it to the table:
+// var header = table.createTHead();
+//
+// // Create an empty <tr> element and add it to the first position of <thead>:
+// var row = header.insertRow(0);
+//
+// // Insert a new cell (<td>) at the first position of the "new" <tr> element:
+// var cell = row.insertCell(0);
+//
+// // Add some bold text in the new cell:
+// cell.innerHTML = "<b>This is a table header</b>";
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+var handler1 = document.getElementById("tryout");
+console.log(handler1);
+// var tbl1  = document.createElement('table');
+// var thead = tbl1.createTHead();
+// var row = thead.insertRow(0);
+// for(var j = 0; j < 10; j++){
+//     var td = row.insertCell(0);
+//     // id of each cell r?c?, from r0c0 to r7c10, 8*11
+//     td.id = "1r0" +"c" + j;
+// }
+//
+// // for(var i = 1; i < 8; i++){
+// //     var tr = tbl1.insertRow();
+// //     for(var j = 0; j < 10; j++){
+// //         var td = tr.insertCell();
+// //         // id of each cell r?c?, from r0c0 to r7c10, 8*11
+// //         td.id = "r" + i +"c" + j;
+// //     }
+// // }
+// console.log(tbl1);
+// handler1.appendChild(tbl1);
 
 
 
@@ -273,8 +321,8 @@ class CellVis2{
 //     var body = document.body,
 //         tbl  = document.createElement('table');
 //     tbl.style.width  = '1000px';
-//     tbl.style.border = '1px solid black';
-//
+// //     tbl.style.border = '1px solid black';
+// //
 //     for(var i = 0; i < 10; i++){
 //         var tr = tbl.insertRow();
 //         for(var j = 0; j < 10; j++){
