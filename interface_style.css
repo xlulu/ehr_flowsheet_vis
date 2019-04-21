@@ -1,9 +1,23 @@
-table {
-    /*border: 1px solid black;*/
+.table {
+    padding: 10px;
+}
+
+.align-middle {
+    text-align: center;
 }
 
 td {
     width: 60px;
     height: 80px;
-    /*border : 1px solid black;*/
+}
+
+svg path {
+    fill: none;
+    stroke: #999;
+}
+
+svg line {
+    stroke: steelblue;
+    stroke-width: 1px;
+    stroke-dasharray: 5px;
 }
