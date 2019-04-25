@@ -1,5 +1,6 @@
 .table {
     padding: 10px;
+
 }
 
 .align-middle {
@@ -20,4 +21,9 @@ svg line {
     stroke: steelblue;
     stroke-width: 1px;
     stroke-dasharray: 5px;
+}
+
+.expend {
+    /*background-color: black;*/
+    width: 200px;
 }

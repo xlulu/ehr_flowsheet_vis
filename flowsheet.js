@@ -25,9 +25,9 @@ $(document).ready(() => {
 // }
 });
 
-const categories = ["Weight", "Blood Pressure", "Pulse", "Pulse Oxygen", "AIC", "Glucose", "Medicine"];
+const categories = ["Weight (lb)", "Blood Pressure (mm Hg)", "Pulse (BPM)", "Pulse Oxygen", "AIC", "Glucose (mg/dL)", "Medicine"];
 const categories_vis = ["Weight", "BloodPressure(diastolic)", "BloodPressure(systolic)",  "Pulse", "PulseOx", "INR", "Glucose"];
-const categories_vis1 = ["DateTime", "Weight", "BloodPressure(diastolic)", "BloodPressure(systolic)",  "Pulse", "PulseOx", "INR", "Glucose"];
+const categories_vis1 = ["DateTime", "Weight", "BloodPressure(diastolic)", "BloodPressure(systolic)",  "Pulse", "PulseOx", "INR", "Glucose", "Med"];
 // doctor_visit_1 = [new Date(2017, 11, 20, 17), new Date(2017, 11, 28, 19, 9), new Date(2017, 12, 29, 20, 9), new Date(2018, 3, 4, 15, 4), new Date(2018, 5, 17, 14, 4)]
 var width = 130;
 var height = 90;
@@ -44,16 +44,8 @@ var max = {};
 function renderVis(data){
     data_all = init_data(data);
     console.log(data_all);
-    // console.log(typeof(data_all[0].Glucose));
     tableCreate(data_all);
 }
-
-
-// function convert(d) {
-//     return {
-//         Weight: +d.Weight        // convert string to number
-//     };
-// }
 
 // load data from csv to data, seperate by category to data_table{}, find min, max to each category
 function init_data(data){
@@ -117,9 +109,12 @@ function init_data(data){
 function tableCreate(data){
     var handler = document.getElementById("flowsheet");
     var tbl  = document.createElement('table');
-    tbl.classList.add("table");
-    tbl.classList.add("table-bordered");
-    tbl.classList.add("table-hover");
+    $(tbl).addClass("table");
+    $(tbl).addClass("table-bordered");
+    $(tbl).addClass("table-hover");
+    // tbl.classList.add("table");
+    // tbl.classList.add("table-bordered");
+    // tbl.classList.add("table-hover");
     tbl.id = "flowsheet_table";
 
     var thead = document.createElement('thead');
@@ -159,7 +154,7 @@ function tableCreate(data){
         }
     }
     for (var i = 0; i < 5; i++) {
-        for (var j = 3 ; j < 7; j++){
+        for (var j = 3 ; j < 8; j++){
             document.getElementById("r" + j + "c" + (i*2+1)).innerText = visit_data[i][categories_vis1[j+1]];
         }
     }
@@ -180,10 +175,10 @@ function tableCreate(data){
         // }
         cell_wt = new CellVis(data_period, "r1c"+2*i, "Weight", x_scale, min.Weight, max.Weight);
         cell_bp = new CellVis2(data_period, "r2c"+2*i, "BloodPressure(diastolic)", "BloodPressure(systolic)", x_scale, min["BloodPressure(diastolic)"], max["BloodPressure(systolic)"]);
-        cell_pls = new CellVis(data_period, "r3c"+2*i, "Pulse", x_scale, min.Pulse, max.Pulse);
+        cell_pls = new CellVis(data_period, "r3c"+2*i, "Pulse", x_scale, min.Pulse, max.Pulse, 59, 99);
         cell_pls_ox = new CellVis(data_period, "r4c"+2*i, "PulseOx", x_scale, min.PulseOx, max.PulseOx, 75, 82);
         cell_aic = new CellVis(data_period, "r5c"+2*i, "INR", x_scale, min.INR, max.INR);
-        cell_gc = new CellVis(data_period, "r6c"+2*i, "Glucose", x_scale, min.Glucose, max.Glucose);
+        cell_gc = new CellVis(data_period, "r6c"+2*i, "Glucose", x_scale, min.Glucose, max.Glucose, 120, 160);
         // cell_md = new
     }
 }
@@ -203,6 +198,20 @@ class CellVis{
         // omit empty values
         this.vis_data_filter = this.vis_data.filter(function(d){return d[category] !== "";});
         this.id = document.getElementById(cell_id);
+
+        // expand the column
+        // $("#" + this.id).click(function(){
+        //     $("#" + this.id).toggleClass("expend");
+        // });
+        var click = 0;
+        $("td").click(function(){
+            if (click % 2 == 0){ $(this).children("svg").addClass("expend");}
+            else { $(this).children("svg").removeClass("expend");}
+            click += 1;
+            width = 200;
+            console.log("clicked!")
+        });
+
         this.svg = d3.select(this.id)
             .append("svg")
             .attr("width", width)
@@ -259,6 +268,8 @@ class CellVis{
             .attr('r', 3)
             .on('mouseover', mouseoverHandler)
             .on('mouseout', mouseoutHandler);
+        this.circles.exit().remove();
+
         // add spline
         this.spline = this.svg.append("path")
             .datum(this.vis_data_filter)
@@ -279,7 +290,7 @@ class CellVis{
 // data1 are lower, data2 are higher
 class CellVis2{
     // chart in each cell
-    constructor(cell_data, cell_id, category1, category2, x_scale, y_min, y_max){
+    constructor(cell_data, cell_id, category1, category2, x_scale, y_min, y_max, low_1 = 0, high_1 = 80, low_2 = 0, high_2 = 120){
         this.zoomin = false;
         var thisvis = this;
         this.x_scale = x_scale;
@@ -294,6 +305,50 @@ class CellVis2{
             .append("svg")
             .attr("width", width)
             .attr("height", height);
+
+        // tool tip and hover functions
+        var tool_tip_1 = d3.tip()
+            .attr("class", "d3-tip")
+            .offset([-8, 0])
+            .html(function(d){
+                return d[category1] + "<br>"+ d.DateTime;
+            });
+        tool_tip_1(this.svg);
+        function mouseoverHandler_1(d) {
+            tool_tip_1.show(d);
+        };
+        function mouseoutHandler_1(d) {
+            tool_tip_1.hide(d);
+        };
+        // tool tip and hover functions
+        var tool_tip_2 = d3.tip()
+            .attr("class", "d3-tip")
+            .offset([-8, 0])
+            .html(function(d){
+                return d[category2] + "<br>"+ d.DateTime;
+            });
+        tool_tip_2(this.svg);
+        function mouseoverHandler_2(d) {
+            tool_tip_2.show(d);
+        };
+        function mouseoutHandler_2(d) {
+            tool_tip_2.hide(d);
+        };
+
+        // add low and high horizontal line for outliers
+        this.low_1 = this.svg.append("line")
+            .attr("class", "line")
+            .attr("x1", margin)
+            .attr("x2", width - margin)
+            .attr("y1", this.y_scale(low_1))
+            .attr("y2", this.y_scale(low_1));
+        this.high_1 = this.svg.append("line")
+            .attr("class", "line")
+            .attr("x1", margin)
+            .attr("x2", width - margin)
+            .attr("y1", this.y_scale(high_1))
+            .attr("y2", this.y_scale(high_1));
+
         // add circles for category 1
         this.circles1 = this.svg
             .selectAll(".dot1").data(this.vis_data_filter).enter().append("circle")
@@ -304,7 +359,9 @@ class CellVis2{
             .attr('cy', function(d) {
                 return thisvis.y_scale(d[category1]);
             })
-            .attr('r', 3);
+            .attr('r', 3)
+            .on('mouseover', mouseoverHandler_1)
+            .on('mouseout', mouseoutHandler_1);
         // add spline for category 1
         // add spline
         this.spline1 = this.svg.append("path")
@@ -315,6 +372,22 @@ class CellVis2{
                 .curve(d3.curveCatmullRom)
                 .x(function(d){return thisvis.x_scale(d.date_time);})
                 .y(function(d){return thisvis.y_scale(d[category1]);}));
+
+
+        // add low and high horizontal line for outliers
+        this.low_1 = this.svg.append("line")
+            .attr("class", "line")
+            .attr("x1", margin)
+            .attr("x2", width - margin)
+            .attr("y1", this.y_scale(low_2))
+            .attr("y2", this.y_scale(low_2));
+        this.high_1 = this.svg.append("line")
+            .attr("class", "line")
+            .attr("x1", margin)
+            .attr("x2", width - margin)
+            .attr("y1", this.y_scale(high_2))
+            .attr("y2", this.y_scale(high_2));
+
         // add circles for category 2
         this.circles2 = this.svg
             .selectAll(".dot2").data(this.vis_data_filter).enter().append("circle")
@@ -326,7 +399,9 @@ class CellVis2{
                 return thisvis.y_scale(d[category2]);
             })
             .attr('r', 3)
-            .attr("fill", "Navy");
+            .attr("fill", "Navy")
+            .on('mouseover', mouseoverHandler_2)
+            .on('mouseout', mouseoutHandler_2);
         // add spline for category 2
         // add spline
         this.spline2 = this.svg.append("path")
